@@ -6,15 +6,23 @@ export type Bitflags<T extends Record<string, number>> = {
   readonly [K in keyof T]: Tagged<T[K], 'Bitflag'>
 }
 
-interface FlagDescription {
+type BitPosition = {
+  exact: number
+  remaining: number
+  visual: string
+}
+
+type FlagDescription = {
   name: string
   value: number
   decimal: string
   hexadecimal: string
   binary: string
+  unknown: boolean
+  bitPosition: BitPosition
 }
 
-interface BitflagOperations {
+type BitflagOperations = {
   has(...flags: Bitflag[]): boolean
   hasAny(...flags: Bitflag[]): boolean
   hasExact(...flags: Bitflag[]): boolean
@@ -31,13 +39,11 @@ interface BitflagOperations {
 export function defineBitflags<T extends Record<string, number>>(obj: T): Bitflags<T> {
   const frozen = Object.freeze(obj)
 
-  if (process.env['NODE_ENV'] !== 'production') {
-    for (const [key, value] of Object.entries(frozen)) {
-      if (!Number.isInteger(value) || value < 0 || value > 0x7fffffff) {
-        throw new Error(
-          `Invalid bitflag value for "${key}": ${value}. Must be a non-negative integer within 31-bit range.`
-        )
-      }
+  for (const [key, value] of Object.entries(frozen)) {
+    if (!Number.isInteger(value) || value < 0 || value > 0x7fffffff) {
+      throw new Error(
+        `Invalid bitflag value for "${key}": ${value}. Must be a non-negative integer within 31-bit range.`
+      )
     }
   }
 
@@ -52,47 +58,78 @@ function combineFlags(flags: Bitflag[]): number {
   return result
 }
 
+function createBitPosition(value: number): BitPosition {
+  if (value === 0) {
+    return {
+      exact: -1,
+      remaining: 31,
+      visual: '(0)0000000000000000000000000000000',
+    }
+  }
+
+  const bits = []
+  const exactPositions = []
+
+  for (let i = 30; i >= 0; i--) {
+    if (value & (1 << i)) {
+      bits.push('[1]')
+      exactPositions.push(i)
+    } else {
+      bits.push('0')
+    }
+  }
+
+  const visual = `(0)${bits.join('')}`
+  const maxPosition = exactPositions.length > 0 ? Math.max(...exactPositions) : 0
+
+  return {
+    exact: maxPosition,
+    remaining: 31 - maxPosition,
+    visual: visual,
+  }
+}
+
 export function bitflag(flag: Bitflag | number = 0): BitflagOperations {
   const value = (typeof flag === 'number' ? flag : (flag as unknown as number)) | 0
 
   return {
-    has(...flags: Bitflag[]): boolean {
+    has(...flags: Bitflag[]) {
       if (flags.length === 0) return false
       const combined = combineFlags(flags)
       return (value & combined) === combined
     },
 
-    hasAny(...flags: Bitflag[]): boolean {
+    hasAny(...flags: Bitflag[]) {
       if (flags.length === 0) return false
       const combined = combineFlags(flags)
       return (value & combined) !== 0
     },
 
-    hasExact(...flags: Bitflag[]): boolean {
+    hasExact(...flags: Bitflag[]) {
       if (flags.length === 0) return value === 0
       const combined = combineFlags(flags)
       return value === combined
     },
 
-    add(...flags: Bitflag[]): Bitflag {
+    add(...flags: Bitflag[]) {
       if (flags.length === 0) return value as Bitflag
       const combined = combineFlags(flags)
       return (value | combined) as Bitflag
     },
 
-    remove(...flags: Bitflag[]): Bitflag {
+    remove(...flags: Bitflag[]) {
       if (flags.length === 0) return value as Bitflag
       const combined = combineFlags(flags)
       return (value & ~combined) as Bitflag
     },
 
-    toggle(...flags: Bitflag[]): Bitflag {
+    toggle(...flags: Bitflag[]) {
       if (flags.length === 0) return value as Bitflag
       const combined = combineFlags(flags)
       return (value ^ combined) as Bitflag
     },
 
-    clear(): Bitflag {
+    clear() {
       return 0 as Bitflag
     },
 
@@ -104,6 +141,8 @@ export function bitflag(flag: Bitflag | number = 0): BitflagOperations {
           decimal: '0',
           hexadecimal: '0x0',
           binary: '0b0',
+          unknown: false,
+          bitPosition: createBitPosition(0),
         }
         return
       }
@@ -121,6 +160,8 @@ export function bitflag(flag: Bitflag | number = 0): BitflagOperations {
               decimal: numValue.toString(),
               hexadecimal: `0x${numValue.toString(16).toUpperCase()}`,
               binary: `0b${numValue.toString(2)}`,
+              unknown: false,
+              bitPosition: createBitPosition(numValue),
             })
             unknownBits &= ~numValue
           }
@@ -137,6 +178,8 @@ export function bitflag(flag: Bitflag | number = 0): BitflagOperations {
               decimal: mask.toString(),
               hexadecimal: `0x${mask.toString(16).toUpperCase()}`,
               binary: `0b${mask.toString(2)}`,
+              unknown: false,
+              bitPosition: createBitPosition(mask),
             }
           }
         }
@@ -155,6 +198,8 @@ export function bitflag(flag: Bitflag | number = 0): BitflagOperations {
                 decimal: mask.toString(),
                 hexadecimal: `0x${mask.toString(16).toUpperCase()}`,
                 binary: `0b${mask.toString(2)}`,
+                unknown: true,
+                bitPosition: createBitPosition(mask),
               }
             }
           }
@@ -162,15 +207,15 @@ export function bitflag(flag: Bitflag | number = 0): BitflagOperations {
       }
     },
 
-    get value(): number {
+    get value() {
       return value
     },
 
-    valueOf(): number {
+    valueOf() {
       return value
     },
 
-    toString(): string {
+    toString() {
       return value.toString()
     },
   }

@@ -16,6 +16,7 @@ export default defineConfig({
         'node_modules/',
         'dist/',
         'test/',
+        'benchmark/',
         '**/*.d.ts',
         'rollup.config.js',
         'vitest.config.ts',

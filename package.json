@@ -1,5 +1,5 @@
 {
-  "name": "bflag",
+  "name": "bitf",
   "version": "0.0.1",
   "description": "A tiny utility to write and manage bit flags in JavaScript/TypeScript projects.",
   "type": "module",
@@ -32,6 +32,9 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "bench": "tsx benchmark/index.ts",
+    "bench:bitf": "tsx benchmark/runner.ts --bitf",
+    "bench:json": "tsx benchmark/runner.ts --json",
+    "bench:gc": "node --expose-gc node_modules/.bin/tsx benchmark/index.ts",
     "bench:watch": "tsx watch benchmark/index.ts",
     "prepare": "husky",
     "postinstall": "husky",
