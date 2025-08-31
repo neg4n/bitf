@@ -6,7 +6,7 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["src/**/*", "test/**/*", "*.ts", "*.js", "*.json"],
+    "includes": ["src/**/*", "benchmark/**/*", "test/**/*", "*.ts", "*.js", "*.json"],
     "experimentalScannerIgnores": ["dist/**", "node_modules/**"]
   },
   "formatter": {

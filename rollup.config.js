@@ -8,7 +8,6 @@ import dts from 'rollup-plugin-dts'
 const external = id => !id.startsWith('.') && !id.startsWith('/') && !id.includes('src/')
 
 export default defineConfig([
-  // ESM and CJS builds
   {
     input: 'src/index.ts',
     external,
@@ -37,7 +36,6 @@ export default defineConfig([
       }),
     ],
   },
-  // Minified ESM build
   {
     input: 'src/index.ts',
     external,
@@ -70,7 +68,6 @@ export default defineConfig([
       }),
     ],
   },
-  // Type definitions
   {
     input: 'src/index.ts',
     external,

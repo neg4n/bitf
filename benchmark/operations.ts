@@ -1,5 +1,6 @@
 import { Bench } from 'tinybench'
-import { defineBitflags, bitflag } from '../src/index'
+import { bitflag, defineBitflags } from '../src/index'
+import { bitToFlagName, defineJsonFlags, jsonFlag } from './json-flags'
 
 const FLAGS = defineBitflags({
   NONE: 0,
@@ -13,161 +14,260 @@ const FLAGS = defineBitflags({
   FLAG_7: 1 << 7,
   GROUP_LOW: (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3),
   GROUP_HIGH: (1 << 4) | (1 << 5) | (1 << 6) | (1 << 7),
-  ALL: (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4) | (1 << 5) | (1 << 6) | (1 << 7)
+  ALL: (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4) | (1 << 5) | (1 << 6) | (1 << 7),
 })
 
-function formatNumber(num: number): string {
-  return num.toLocaleString('en-US')
+const JSON_FLAGS = defineJsonFlags(FLAGS as any)
+
+function calculateCV(stdDev: number, mean: number): number {
+  return mean > 0 ? stdDev / mean : 0
 }
 
-function formatResult(task: any): string {
-  if (!task.result) return 'Failed'
-  const ops = Math.round(task.result.hz)
-  const rme = task.result.rme?.toFixed(2) || '0.00'
-  const samples = task.result.samples.length
-  return `${formatNumber(ops).padStart(11)} ops/sec ±${rme}% (${samples} runs sampled)`
+function formatOps(ops: number): string {
+  if (ops >= 1_000_000_000) {
+    return `${(ops / 1_000_000_000).toFixed(2)}B`
+  } else if (ops >= 1_000_000) {
+    return `${(ops / 1_000_000).toFixed(2)}M`
+  } else if (ops >= 1_000) {
+    return `${(ops / 1_000).toFixed(2)}K`
+  }
+  return ops.toFixed(0)
+}
+
+type BenchmarkResult = {
+  name: string
+  ops: number
+  rme: number
+  samples: number
+  cv?: number
 }
 
 export async function runOperationsBenchmark() {
-  // Create test subjects
-  const singleFlag = bitflag(FLAGS.FLAG_0)
-  const multiFlags = bitflag(FLAGS.FLAG_0 | FLAGS.FLAG_1 | FLAGS.FLAG_2)
-  const allFlags = bitflag(FLAGS.ALL)
-  
-  const bench = new Bench({ 
-    time: 100
+  async function warmup() {
+    const warmupBench = new Bench({ time: 100 })
+
+    const bf = bitflag(FLAGS.FLAG_0)
+    const jf = jsonFlag(FLAGS.FLAG_0)
+
+    warmupBench
+      .add('warmup-bitflag', () => bf.has(FLAGS.FLAG_0))
+      .add('warmup-json', () => jf.has(JSON_FLAGS.FLAG_0))
+
+    await warmupBench.run()
+  }
+
+  console.log('Running warmup iterations...')
+  for (let i = 0; i < 5; i++) {
+    await warmup()
+  }
+
+  const bitfSingle = bitflag(FLAGS.FLAG_0)
+  const bitfMulti = bitflag(FLAGS.FLAG_0 | FLAGS.FLAG_1 | FLAGS.FLAG_2)
+  const bitfAll = bitflag(FLAGS.ALL)
+
+  const jsonSingle = jsonFlag(FLAGS.FLAG_0)
+  const jsonMulti = jsonFlag(FLAGS.FLAG_0 | FLAGS.FLAG_1 | FLAGS.FLAG_2)
+  const jsonAll = jsonFlag(FLAGS.ALL)
+
+  const bench = new Bench({
+    time: 500,
+    iterations: 100000,
   })
 
-  // Add benchmarks - Library operations
   bench
-    // Check operations
-    .add('[lib] has() single', () => {
-      return singleFlag.has(FLAGS.FLAG_0)
+    .add('bitf.has(single)', () => {
+      return bitfSingle.has(FLAGS.FLAG_0)
     })
-    .add('[lib] has() double', () => {
-      return multiFlags.has(FLAGS.FLAG_0, FLAGS.FLAG_1)
+    .add('bitf.has(double)', () => {
+      return bitfMulti.has(FLAGS.FLAG_0, FLAGS.FLAG_1)
     })
-    .add('[lib] hasAny()', () => {
-      return multiFlags.hasAny(FLAGS.FLAG_0, FLAGS.FLAG_5)
+    .add('bitf.hasAny()', () => {
+      return bitfMulti.hasAny(FLAGS.FLAG_0, FLAGS.FLAG_5)
     })
-    .add('[lib] hasExact()', () => {
-      return multiFlags.hasExact(FLAGS.FLAG_0, FLAGS.FLAG_1, FLAGS.FLAG_2)
-    })
-    
-    // Mutation operations
-    .add('[lib] add() single', () => {
-      return singleFlag.add(FLAGS.FLAG_5)
-    })
-    .add('[lib] add() multiple', () => {
-      return singleFlag.add(FLAGS.FLAG_5, FLAGS.FLAG_6)
-    })
-    .add('[lib] remove() single', () => {
-      return multiFlags.remove(FLAGS.FLAG_1)
-    })
-    .add('[lib] remove() multiple', () => {
-      return allFlags.remove(FLAGS.FLAG_0, FLAGS.FLAG_1)
-    })
-    .add('[lib] toggle()', () => {
-      return multiFlags.toggle(FLAGS.FLAG_5)
-    })
-    .add('[lib] clear()', () => {
-      return allFlags.clear()
-    })
-    
-    // Property access
-    .add('[lib] value getter', () => {
-      return multiFlags.value
-    })
-    .add('[lib] valueOf()', () => {
-      return multiFlags.valueOf()
+    .add('bitf.hasExact()', () => {
+      return bitfMulti.hasExact(FLAGS.FLAG_0, FLAGS.FLAG_1, FLAGS.FLAG_2)
     })
 
-  // Raw bitwise operations for comparison
   bench
-    // Check operations
-    .add('[raw] AND check single', () => {
-      const value = 7 // 0b111
-      return (value & 1) === 1
+    .add('json.has(single)', () => {
+      return jsonSingle.has(JSON_FLAGS.FLAG_0)
     })
-    .add('[raw] AND check double', () => {
-      const value = 7 // 0b111
-      return (value & 1) === 1 && (value & 2) === 2
+    .add('json.has(double)', () => {
+      return jsonMulti.has(JSON_FLAGS.FLAG_0, JSON_FLAGS.FLAG_1)
     })
-    .add('[raw] AND check any', () => {
-      const value = 7 // 0b111
-      const mask = 1 | 32 // FLAG_0 | FLAG_5
-      return (value & mask) !== 0
+    .add('json.hasAny()', () => {
+      return jsonMulti.hasAny(JSON_FLAGS.FLAG_0, JSON_FLAGS.FLAG_5)
     })
-    .add('[raw] equality check', () => {
-      const value = 7 // 0b111
-      const expected = 7
-      return value === expected
-    })
-    
-    // Mutation operations
-    .add('[raw] OR single', () => {
-      const value = 1
-      return value | 32
-    })
-    .add('[raw] OR multiple', () => {
-      const value = 1
-      return value | 32 | 64
-    })
-    .add('[raw] AND NOT single', () => {
-      const value = 7
-      return value & ~2
-    })
-    .add('[raw] AND NOT multiple', () => {
-      const value = 255
-      return value & ~(1 | 2)
-    })
-    .add('[raw] XOR toggle', () => {
-      const value = 7
-      return value ^ 32
-    })
-    .add('[raw] clear (assign 0)', () => {
-      return 0
-    })
-    
-    // Direct access
-    .add('[raw] variable access', () => {
-      const value = 7
-      return value
-    })
-    .add('[raw] identity return', () => {
-      const value = 7
-      return value
+    .add('json.hasExact()', () => {
+      return jsonMulti.hasExact(JSON_FLAGS.FLAG_0, JSON_FLAGS.FLAG_1, JSON_FLAGS.FLAG_2)
     })
 
-  // Run benchmarks
-  console.log('Benchmark:')
+  bench
+    .add('bitf.add(single)', () => {
+      return bitfSingle.add(FLAGS.FLAG_5)
+    })
+    .add('bitf.add(multiple)', () => {
+      return bitfSingle.add(FLAGS.FLAG_5, FLAGS.FLAG_6)
+    })
+    .add('bitf.remove(single)', () => {
+      return bitfMulti.remove(FLAGS.FLAG_1)
+    })
+    .add('bitf.remove(multiple)', () => {
+      return bitfAll.remove(FLAGS.FLAG_0, FLAGS.FLAG_1)
+    })
+    .add('bitf.toggle()', () => {
+      return bitfMulti.toggle(FLAGS.FLAG_5)
+    })
+    .add('bitf.clear()', () => {
+      return bitfAll.clear()
+    })
+
+  bench
+    .add('json.add(single)', () => {
+      return jsonSingle.add(JSON_FLAGS.FLAG_5)
+    })
+    .add('json.add(multiple)', () => {
+      return jsonSingle.add(JSON_FLAGS.FLAG_5, JSON_FLAGS.FLAG_6)
+    })
+    .add('json.remove(single)', () => {
+      return jsonMulti.remove(JSON_FLAGS.FLAG_1)
+    })
+    .add('json.remove(multiple)', () => {
+      return jsonAll.remove(JSON_FLAGS.FLAG_0, JSON_FLAGS.FLAG_1)
+    })
+    .add('json.toggle()', () => {
+      return jsonMulti.toggle(JSON_FLAGS.FLAG_5)
+    })
+    .add('json.clear()', () => {
+      return jsonAll.clear()
+    })
+
+  bench
+    .add('bitf.value', () => {
+      return bitfMulti.value
+    })
+    .add('bitf.valueOf()', () => {
+      return bitfMulti.valueOf()
+    })
+
+  bench
+    .add('json.value', () => {
+      return jsonMulti.value
+    })
+    .add('json.valueOf()', () => {
+      return jsonMulti.valueOf()
+    })
+
+  console.log('\nRunning benchmarks (500ms each, max 100k iterations)...\n')
   await bench.run()
-  
-  // Sort and display results by category
-  const libTasks = bench.tasks.filter(t => t.name.startsWith('[lib]'))
-  const rawTasks = bench.tasks.filter(t => t.name.startsWith('[raw]'))
-  
-  // Sort by performance (highest to lowest)
-  libTasks.sort((a, b) => (b.result?.hz || 0) - (a.result?.hz || 0))
-  rawTasks.sort((a, b) => (b.result?.hz || 0) - (a.result?.hz || 0))
-  
-  // Find max name length for alignment
-  const allTasks = [...libTasks, ...rawTasks]
-  const maxNameLength = Math.max(...allTasks.map(t => t.name.length))
-  
-  // Display library operations
-  console.log('\n  Library operations (sorted by performance):')
-  libTasks.forEach(task => {
-    const name = task.name.padEnd(maxNameLength + 2)
-    console.log(`  ${name}${formatResult(task)}`)
-  })
-  
-  // Display raw operations
-  console.log('\n  Raw bitwise operations (sorted by performance):')
-  rawTasks.forEach(task => {
-    const name = task.name.padEnd(maxNameLength + 2)
-    console.log(`  ${name}${formatResult(task)}`)
-  })
+
+  const operations = [
+    'has(single)',
+    'has(double)',
+    'hasAny()',
+    'hasExact()',
+    'add(single)',
+    'add(multiple)',
+    'remove(single)',
+    'remove(multiple)',
+    'toggle()',
+    'clear()',
+    'value',
+    'valueOf()',
+  ]
+
+  const results: Map<string, { bitf?: BenchmarkResult; json?: BenchmarkResult }> = new Map()
+
+  for (const task of bench.tasks) {
+    const [system, ...opParts] = task.name.split('.')
+    const operation = opParts.join('.')
+
+    if (!results.has(operation)) {
+      results.set(operation, {})
+    }
+
+    const result: BenchmarkResult = {
+      name: task.name,
+      ops: Math.round(task.result?.hz || 0),
+      rme: task.result?.rme || 0,
+      samples: task.result?.samples?.length || 0,
+    }
+
+    if (task.result?.sd && task.result?.mean) {
+      result.cv = calculateCV(task.result.sd, task.result.mean)
+    }
+
+    const entry = results.get(operation)!
+    if (system === 'bitf') {
+      entry.bitf = result
+    } else {
+      entry.json = result
+    }
+  }
+
+  console.log('╔════════════════════════════════════════════════════════════════════════════════╗')
+  console.log(
+    '║                          BENCHMARK RESULTS                                        ║'
+  )
+  console.log('╠════════════════════╤═══════════════╤═══════════════╤═════════╤═════════════════╣')
+  console.log('║ Operation          │ bitf ops/sec │ JSON ops/sec  │ Ratio   │ Samples         ║')
+  console.log('╠════════════════════╪═══════════════╪═══════════════╪═════════╪═════════════════╣')
+
+  for (const op of operations) {
+    const result = results.get(op)
+    if (!result || !result.bitf || !result.json) continue
+
+    const ratio = result.bitf.ops / result.json.ops
+    const opName = op.padEnd(18)
+    const bitfOps = formatOps(result.bitf.ops).padStart(13)
+    const jsonOps = formatOps(result.json.ops).padStart(13)
+    const ratioStr = `${ratio.toFixed(1)}x`.padStart(7)
+    const samples = `${result.bitf.samples}/${result.json.samples}`.padStart(15)
+
+    console.log(`║ ${opName} │ ${bitfOps} │ ${jsonOps} │ ${ratioStr} │ ${samples} ║`)
+
+    if (result.bitf.rme > 3 || result.json.rme > 3) {
+      const warning = `  ⚠ High RME: bitf=${result.bitf.rme.toFixed(2)}% json=${result.json.rme.toFixed(2)}%`
+      console.log(`║ ${warning.padEnd(82)} ║`)
+    }
+  }
+
+  console.log('╚════════════════════╧═══════════════╧═══════════════╧═════════╧═════════════════╝')
+
+  let totalRatio = 0
+  let count = 0
+  for (const result of results.values()) {
+    if (result.bitf && result.json) {
+      totalRatio += result.bitf.ops / result.json.ops
+      count++
+    }
+  }
+
+  console.log(
+    `\n📊 Average Performance Improvement: ${(totalRatio / count).toFixed(1)}x faster than JSON`
+  )
+
+  if (global.gc) {
+    console.log('\n💾 Memory Usage Comparison:')
+
+    global.gc()
+    const bitfBefore = process.memoryUsage().heapUsed
+    const bitfInstances = Array.from({ length: 10000 }, () => bitflag(FLAGS.ALL))
+    const bitfAfter = process.memoryUsage().heapUsed
+    const bitfMemory = (bitfAfter - bitfBefore) / 10000
+
+    global.gc()
+    const jsonBefore = process.memoryUsage().heapUsed
+    const jsonInstances = Array.from({ length: 10000 }, () => jsonFlag(FLAGS.ALL))
+    const jsonAfter = process.memoryUsage().heapUsed
+    const jsonMemory = (jsonAfter - jsonBefore) / 10000
+
+    console.log(`  bitf: ~${bitfMemory.toFixed(2)} bytes per instance`)
+    console.log(`  JSON:  ~${jsonMemory.toFixed(2)} bytes per instance`)
+    console.log(`  Ratio: ${(jsonMemory / bitfMemory).toFixed(1)}x more memory for JSON`)
+  } else {
+    console.log('\n💡 Tip: Run with --expose-gc flag for memory usage comparison')
+  }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
