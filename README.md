@@ -40,7 +40,7 @@ This example shows a pizza ordering system where customers can customize their t
 The code uses bitflags to efficiently track which toppings are selected and validate these rules, demonstrating how bitflags can handle complex combinations while enforcing business logic and detecting special cases for promotions without hundreds of lines of code of copying, modyfing and iterating over `Object`s and `Array`s of `Object`s and mapping boolean states and wasting the network bandwidth.
 
 ```ts
-import { type Bitflag, bitflag, defineBitflags } from "../src/index";
+import { type Bitflag, bitflag, defineBitflags } from "bitf";
 
 // This should probably live in a file shared between frontend/backend contexts
 const Toppings = defineBitflags({
