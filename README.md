@@ -4,7 +4,7 @@
 
 ## What are bitflags?
 
-Bitflags are a way to represent a set of boolean options using a single integer. Each bit in the number corresponds to a different option, allowing for efficient storage and manipulation of multiple flags at once. Concept of creating this library originates from the article ["Everything About Bitflags"](https://neg4n.dev/explore/everything-about-bitflags).
+Bitflags are a way to represent a set of boolean options using a single integer. Each bit in the number corresponds to a different option, allowing for efficient storage and manipulation of multiple flags at once. Concept of creating this library originates from the article ["Everything About Bitflags"](https://neg4n.dev/blog/everything-about-bitflags).
 
 ### Features
 
@@ -693,7 +693,7 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
 
 ## Benchmarks
 
-See more ["Everything About Bitflags - Benchmarks"](https://neg4n.dev/explore/everything-about-bitflags#benchmarks).
+See more ["Everything About Bitflags - Benchmarks"](https://neg4n.dev/blog/everything-about-bitflags#benchmarks).
 
 ## License
 
