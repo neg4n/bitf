@@ -164,39 +164,40 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
 
   Bitflag is a factory function that returns object with a specific set of operations for managing the flags. It accepts any number or `Bitflag` Tagged Type as an argument and then allows you to perform various operations on it. It also supports methods like `toString()`, `value` getter and `valueOf()` for compatibility with other JavaScript APIs.
 
-  > [!IMPORTANT]
-  > The `bitflag` function's returned object's methods are **non-chainable** - each call to the bitwise operations returns just a number wrapped with the `Bitflag` Tagged Type. It does not return a new instance of the `bitflag` object.
-  >
-  > ✅ Good
-  >
-  > ```ts
-  > const combinedFlags = bitflag(flags.NONE).add(
-  >   flags.MY_OTHER_FLAG,
-  >   flags.ANOTHER_FLAG
-  > );
-  >
-  > if (bitflag(combinedFlags).has(flags.ANOTHER_FLAG)) {
-  >   console.log("has ANOTHER_FLAG");
-  > }
-  > ```
-  >
-  > ❌ Bad
-  >
-  > ```ts
-  > if (
-  >   bitflag(flags.NONE)
-  >     .add(flags.MY_OTHER_FLAG, flags.ANOTHER_FLAG)
-  >     .has(flags.ANOTHER_FLAG)
-  > ) {
-  >   console.log("has ANOTHER_FLAG");
-  > }
-  > ```
+> [!IMPORTANT]
+>
+> The `bitflag` function's returned object's methods are **non-chainable** - each call to the bitwise operations returns just a number wrapped with the `Bitflag` Tagged Type. It does not return a new instance of the `bitflag` object.
+>
+> ✅ Good
+>
+> ```ts
+> const combinedFlags = bitflag(flags.NONE).add(
+>   flags.MY_OTHER_FLAG,
+>   flags.ANOTHER_FLAG
+> );
+>
+> if (bitflag(combinedFlags).has(flags.ANOTHER_FLAG)) {
+>   console.log("has ANOTHER_FLAG");
+> }
+> ```
+>
+> ❌ Bad
+>
+> ```ts
+> if (
+>   bitflag(flags.NONE)
+>     .add(flags.MY_OTHER_FLAG, flags.ANOTHER_FLAG)
+>     .has(flags.ANOTHER_FLAG)
+> ) {
+>   console.log("has ANOTHER_FLAG");
+> }
+> ```
 
 - `.add(...Bitflag[])`
   Adds the specified flags to the current set. Returns a new number wrapped in `Bitflag<T>` as the updated flags.
 
-  > [!TIP]
-  > Adding the same flag multiple times is idempotent - it won't change the result.
+> [!TIP]
+> Adding the same flag multiple times is idempotent - it won't change the result.
 
     <details>
     <summary>Usage Examples</summary>
@@ -212,8 +213,8 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
 - `.remove(...Bitflag[])`
   Removes the specified flags from the current set. Returns a new number wrapped in `Bitflag<T>` as the updated flags.
 
-  > [!TIP]
-  > Removing non-existent flags has no effect and won't change the result.
+> [!TIP]
+> Removing non-existent flags has no effect and won't change the result.
 
     <details>
     <summary>Usage Examples</summary>
@@ -243,8 +244,8 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
 - `.has(...Bitflag[])`
   Checks if all the specified flags are set in the current set. Returns `true` if all flags are present, `false` otherwise.
 
-  > [!TIP]
-  > Passing no arguments to `.has()` always returns `false`.
+> [!TIP]
+> Passing no arguments to `.has()` always returns `false`.
 
     <details>
     <summary>Usage Examples</summary>
@@ -263,8 +264,8 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
 - `.hasAny(...Bitflag[])`
   Checks if any of the specified flags are set in the current set. Returns `true` if at least one flag is present, `false` if none are present.
 
-  > [!TIP]
-  > Passing no arguments to `.hasAny()` always returns `false`.
+> [!TIP]
+> Passing no arguments to `.hasAny()` always returns `false`.
 
     <details>
     <summary>Usage Examples</summary>
@@ -280,8 +281,8 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
 - `.hasExact(...Bitflag[])`
   Checks if the current set matches exactly the specified flags - no more, no less. Returns `true` if the flags match exactly, `false` otherwise.
 
-  > [!TIP]
-  > Calling `.hasExact()` with no arguments checks if the current value is exactly zero.
+> [!TIP]
+> Calling `.hasExact()` with no arguments checks if the current value is exactly zero.
 
     <details>
     <summary>Usage Examples</summary>
@@ -515,11 +516,14 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
 
     </details>
 
-  > [!TIP] > **Bit Position Visualization:** The `visual` field shows a 32-character representation where `[1]` indicates set bits and `0` shows unset bits. The format is `(0)[bit31][bit30]...[bit1][bit0]` with the sign bit always shown as `(0)`.
+> [!TIP] 
+> **Bit Position Visualization:** The `visual` field shows a 32-character representation where `[1]` indicates set bits and `0` shows unset bits. The format is `(0)[bit31][bit30]...[bit1][bit0]` with the sign bit always shown as `(0)`.
 
-  > [!TIP] > **Flag Resolution Order:** When using flag definitions, the iterator yields known flags first (in the order they match), then unknown bits as `UNKNOWN_BIT_X` in ascending bit order.
+> [!TIP] 
+> **Flag Resolution Order:** When using flag definitions, the iterator yields known flags first (in the order they match), then unknown bits as `UNKNOWN_BIT_X` in ascending bit order.
 
-  > [!TIP] > **Complex Flags:** Combined flags (like `READ_WRITE: (1<<0)|(1<<1)`) are detected when their exact bit pattern matches the current value, alongside their individual component flags.
+> [!TIP] 
+> **Complex Flags:** Combined flags (like `READ_WRITE: (1<<0)|(1<<1)`) are detected when their exact bit pattern matches the current value, alongside their individual component flags.
 
 - `.value`
   A getter that returns the current numeric value of the flags as a regular number.
@@ -593,8 +597,8 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
 
   </details>
 
-  > [!TIP]
-  > The returned object is frozen to prevent accidental modifications. All values must be within the range 0 to 0x7FFFFFFF (31-bit signed integer range).
+> [!TIP]
+> The returned object is frozen to prevent accidental modifications. All values must be within the range 0 to 0x7FFFFFFF (31-bit signed integer range).
 
 - `makeBitflag(value: number)`
 
@@ -611,8 +615,8 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
 
   </details>
 
-  > [!TIP]
-  > This function validates the input and throws a descriptive error for invalid values (negative numbers or values exceeding 31 bits). It is also the only function that `throws`
+> [!TIP]
+> This function validates the input and throws a descriptive error for invalid values (negative numbers or values exceeding 31 bits). It is also the only function that `throws`
 
 - `isBitflag(value: unknown)`
 
@@ -629,8 +633,8 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
 
   </details>
 
-  > [!TIP]
-  > This function is useful for runtime validation before using values with the bitflag operations.
+> [!TIP]
+> This function is useful for runtime validation before using values with the bitflag operations.
 
 - `unwrapBitflag(flag: Bitflag)`
 
