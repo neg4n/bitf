@@ -1,6 +1,6 @@
 {
   "name": "bitf",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "A tiny utility to write and manage bit flags in JavaScript/TypeScript projects.",
   "type": "module",
   "main": "./dist/index.cjs",
