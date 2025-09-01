@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { bitflag, defineBitflags, isBitflag, unwrapBitflag } from '../src/index'
+import {
+  type Bitflag,
+  bitflag,
+  defineBitflags,
+  type InferBitflagsDefinitions,
+  isBitflag,
+  makeBitflag,
+  unwrapBitflag,
+} from '../src/index'
 
 describe('defineBitflags', () => {
   it('should create a frozen bitflags object', () => {
@@ -430,7 +438,7 @@ describe('bitflag operations', () => {
         TEST: 5,
       })
 
-      const result = bitflag(flags.TEST as Bitflag)
+      const result = bitflag(makeBitflag(flags.TEST))
       expect(result.value).toBe(5)
       expect(result.has(flags.TEST)).toBe(true)
     })

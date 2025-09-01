@@ -2,9 +2,12 @@ import type { Tagged } from 'type-fest'
 
 export type Bitflag = Tagged<number, 'Bitflag'>
 
-export type Bitflags<T extends Record<string, number>> = {
+export type BitflagsDefinitions<T extends Record<string, number>> = {
   readonly [K in keyof T]: Tagged<T[K], 'Bitflag'>
 }
+
+export type InferBitflagsDefinitions<T extends BitflagsDefinitions<any>> =
+  T extends BitflagsDefinitions<infer U> ? { [K in keyof U]: Bitflag } : never
 
 type BitPosition = {
   exact: number
@@ -22,7 +25,7 @@ type FlagDescription = {
   bitPosition: BitPosition
 }
 
-type BitflagOperations = {
+type BitflagOperations<T extends Record<string, number> = Record<string, number>> = {
   has(...flags: Bitflag[]): boolean
   hasAny(...flags: Bitflag[]): boolean
   hasExact(...flags: Bitflag[]): boolean
@@ -30,13 +33,13 @@ type BitflagOperations = {
   remove(...flags: Bitflag[]): Bitflag
   toggle(...flags: Bitflag[]): Bitflag
   clear(): Bitflag
-  describe(flagDefinitions?: Record<string, Bitflag>): IterableIterator<FlagDescription>
+  describe(flagDefinitions?: BitflagsDefinitions<T>): IterableIterator<FlagDescription>
   value: number
   valueOf(): number
   toString(): string
 }
 
-export function defineBitflags<T extends Record<string, number>>(obj: T): Bitflags<T> {
+export function defineBitflags<T extends Record<string, number>>(obj: T): BitflagsDefinitions<T> {
   const frozen = Object.freeze(obj)
 
   for (const [key, value] of Object.entries(frozen)) {
@@ -47,7 +50,7 @@ export function defineBitflags<T extends Record<string, number>>(obj: T): Bitfla
     }
   }
 
-  return frozen as Bitflags<T>
+  return frozen as BitflagsDefinitions<T>
 }
 
 function combineFlags(flags: Bitflag[]): number {
@@ -89,7 +92,9 @@ function createBitPosition(value: number): BitPosition {
   }
 }
 
-export function bitflag(flag: Bitflag | number = 0): BitflagOperations {
+export function bitflag<T extends Record<string, number> = Record<string, number>>(
+  flag: Bitflag | number = 0
+): BitflagOperations<T> {
   const value = (typeof flag === 'number' ? flag : (flag as unknown as number)) | 0
 
   return {
@@ -133,7 +138,7 @@ export function bitflag(flag: Bitflag | number = 0): BitflagOperations {
       return 0 as Bitflag
     },
 
-    *describe(flagDefinitions?: Record<string, Bitflag>): IterableIterator<FlagDescription> {
+    *describe(flagDefinitions?: BitflagsDefinitions<T>): IterableIterator<FlagDescription> {
       if (value === 0) {
         yield {
           name: 'NONE',
@@ -219,6 +224,15 @@ export function bitflag(flag: Bitflag | number = 0): BitflagOperations {
       return value.toString()
     },
   }
+}
+
+export function makeBitflag(value: number): Bitflag {
+  if (isBitflag(value)) {
+    return value
+  }
+  throw new Error(
+    'Value cannot be converted to Bitflag. Possible causes are: value exceeding 31 bits or value being a negative number.'
+  )
 }
 
 export function isBitflag(value: unknown): value is Bitflag {
