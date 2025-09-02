@@ -126,31 +126,31 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
 
 **Core runtime functionality:**
 
-- `bitflag` - the main function to perform bitwise operations on the flags.
+- [`bitflag`](#bitflagbitflag--number) - the main function to perform bitwise operations on the flags.
   - Bitwise operations abstraction
-    - `has` - checks if the specified flags are set
-    - `hasAny` - checks if any of the specified flags are set
-    - `hasExact` - checks if the specified flags are set exactly
-    - `add` - adds the specified flags
-    - `remove` - removes the specified flags
-    - `toggle` - toggles the specified flags
-    - `clear` - clears all flags
+    - [`has`](#hasbitflag) - checks if the specified flags are set
+    - [`hasAny`](#hasanybitflag) - checks if any of the specified flags are set
+    - [`hasExact`](#hasexactbitflag) - checks if the specified flags are set exactly
+    - [`add`](#addbitflag) - adds the specified flags
+    - [`remove`](#removebitflag) - removes the specified flags
+    - [`toggle`](#togglebitflag) - toggles the specified flags
+    - [`clear`](#clear) - clears all flags
   - Debugging and visualization
-    - `describe` - returns an iterator for describing the flags
+    - [`describe`](#describeflagdefinitions-bitflagsdefinitionst) - returns an iterator for describing the flags
   - Interoperability between the library and other code
-    - `value` - returns the current value of the flags
-    - `valueOf` - returns the current value of the flags
-    - `toString` - returns the string representation of the flags
-- `defineBitflags` - utility to define type-safe set of bit flags
+    - [`value`](#value) - returns the current value of the flags
+    - [`valueOf`](#valueof) - returns the current value of the flags
+    - [`toString`](#tostring) - returns the string representation of the flags
+- [`defineBitflags`](#definebitflagst-extends-recordstring-numberobj-t) - utility to define type-safe set of bit flags
 
 > [!NOTE]
 > All of the operations support passing multiple flags at once through variadic arguments.
 
 **Utility functions**
 
-- `makeBitflag` - utility to create a `Bitflag` Tagged Type from a number if it is possible.
-- `isBitflag` - utility to check if number is within allowed range and to create a `Bitflag` Tagged type out of it
-- `unwrapBitflag` - utility to unwrap the Tagged type of `Bitflag` to be just `number`
+- [`makeBitflag`](#makebitflagvalue-number) - utility to create a `Bitflag` Tagged Type from a number if it is possible.
+- [`isBitflag`](#isbitflagvalue-unknown) - utility to check if number is within allowed range and to create a `Bitflag` Tagged type out of it
+- [`unwrapBitflag`](#unwrapbitflagflag-bitflag) - utility to unwrap the Tagged type of `Bitflag` to be just `number`
 
 **Type utilities**
 
@@ -158,538 +158,486 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
 - `BitflagsDefinitions<T>` - The type for frozen bitflag definition objects returned by `defineBitflags`
 - `InferBitflagsDefinitions<T>` - Type utility to extract the shape from bitflag definitions (similar to Zod's `z.infer`)
 
-## API Specifications
+## API Reference
 
-- `bitflag(Bitflag | number)`
+### `bitflag(Bitflag | number)`
 
-  Bitflag is a factory function that returns object with a specific set of operations for managing the flags. It accepts any number or `Bitflag` Tagged Type as an argument and then allows you to perform various operations on it. It also supports methods like `toString()`, `value` getter and `valueOf()` for compatibility with other JavaScript APIs.
+Bitflag is a factory function that returns object with a specific set of operations for managing the flags. It accepts any number or `Bitflag` Tagged Type as an argument and then allows you to perform various operations on it. It also supports methods like `toString()`, `value` getter and `valueOf()` for compatibility with other JavaScript APIs.
 
-> [!IMPORTANT]
->
-> The `bitflag` function's returned object's methods are **non-chainable** - each call to the bitwise operations returns just a number wrapped with the `Bitflag` Tagged Type. It does not return a new instance of the `bitflag` object.
->
-> ✅ Good
->
-> ```ts
-> const combinedFlags = bitflag(flags.NONE).add(
->   flags.MY_OTHER_FLAG,
->   flags.ANOTHER_FLAG
-> );
->
-> if (bitflag(combinedFlags).has(flags.ANOTHER_FLAG)) {
->   console.log("has ANOTHER_FLAG");
-> }
-> ```
->
-> ❌ Bad
->
-> ```ts
-> if (
->   bitflag(flags.NONE)
->     .add(flags.MY_OTHER_FLAG, flags.ANOTHER_FLAG)
->     .has(flags.ANOTHER_FLAG)
-> ) {
->   console.log("has ANOTHER_FLAG");
-> }
-> ```
+**Important:** The `bitflag` function's returned object's methods are **non-chainable** - each call to the bitwise operations returns just a number wrapped with the `Bitflag` Tagged Type. It does not return a new instance of the `bitflag` object.
 
-- `.add(...Bitflag[])`
-  Adds the specified flags to the current set. Returns a new number wrapped in `Bitflag<T>` as the updated flags.
+#### Correct Usage
 
-> [!TIP]
-> Adding the same flag multiple times is idempotent - it won't change the result.
+```ts
+const combinedFlags = bitflag(flags.NONE).add(
+  flags.MY_OTHER_FLAG,
+  flags.ANOTHER_FLAG
+);
 
-  <details>
-  <summary>Usage Examples</summary>
+if (bitflag(combinedFlags).has(flags.ANOTHER_FLAG)) {
+  console.log("has ANOTHER_FLAG");
+}
+```
 
-  ```ts
-  bitflag(flags.MY_FLAG).add(flags.MY_OTHER_FLAG); // single defined
-  bitflag(flags.MY_FLAG).add(flags.MY_OTHER_FLAG, flags.ANOTHER_FLAG); // multiple defined
-  bitflag(flags.MY_FLAG).add(flags.MY_OTHER_FLAG, makeBitflag(1 << 2)); // mixed
-  ```
+#### Incorrect Usage
 
-  </details>
+```ts
+// ❌ This will not work as expected
+if (
+  bitflag(flags.NONE)
+    .add(flags.MY_OTHER_FLAG, flags.ANOTHER_FLAG)
+    .has(flags.ANOTHER_FLAG)
+) {
+  console.log("has ANOTHER_FLAG");
+}
+```
 
-- `.remove(...Bitflag[])`
-  Removes the specified flags from the current set. Returns a new number wrapped in `Bitflag<T>` as the updated flags.
+### Bitwise Operations
 
-> [!TIP]
-> Removing non-existent flags has no effect and won't change the result.
+### `.has(...Bitflag[])`
 
-  <details>
-  <summary>Usage Examples</summary>
+Checks if all the specified flags are set in the current set. Returns `true` if all flags are present, `false` otherwise.
 
-  ```ts
-  bitflag(flags.READ | flags.WRITE).remove(flags.WRITE); // single defined
-  bitflag(flags.ALL).remove(flags.WRITE, flags.DELETE); // multiple defined
-  bitflag(flags.READ | flags.WRITE).remove(flags.WRITE, makeBitflag(1 << 3)); // mixed
-  ```
+**Tip:** Passing no arguments to `.has()` always returns `false`.
 
-  </details>
+#### Examples
 
-- `.toggle(...Bitflag[])`
-  Toggles the specified flags in the current set - adds them if not present, removes them if present. Returns a new number wrapped in `Bitflag<T>` as the updated flags.
+```ts
+bitflag(flags.READ | flags.WRITE).has(flags.READ); // single defined
+bitflag(flags.READ | flags.WRITE | flags.EXECUTE).has(
+  flags.READ,
+  flags.WRITE
+); // multiple defined
+bitflag(flags.READ | flags.WRITE).has(flags.READ, makeBitflag(1 << 1)); // mixed
+```
 
-  <details>
-  <summary>Usage Examples</summary>
+### `.hasAny(...Bitflag[])`
 
-  ```ts
-  bitflag(flags.READ).toggle(flags.WRITE); // single defined
-  bitflag(flags.READ | flags.EXECUTE).toggle(flags.WRITE, flags.EXECUTE); // multiple defined
-  bitflag(flags.READ).toggle(flags.WRITE, makeBitflag(1 << 4)); // mixed
-  ```
+Checks if any of the specified flags are set in the current set. Returns `true` if at least one flag is present, `false` if none are present.
 
-  </details>
+**Tip:** Passing no arguments to `.hasAny()` always returns `false`.
 
-- `.has(...Bitflag[])`
-  Checks if all the specified flags are set in the current set. Returns `true` if all flags are present, `false` otherwise.
+#### Examples
 
-> [!TIP]
-> Passing no arguments to `.has()` always returns `false`.
+```ts
+bitflag(flags.READ | flags.WRITE).hasAny(flags.EXECUTE); // single defined
+bitflag(flags.READ).hasAny(flags.EXECUTE, flags.DELETE); // multiple defined
+bitflag(flags.READ).hasAny(flags.EXECUTE, makeBitflag(1 << 0)); // mixed
+```
 
-  <details>
-  <summary>Usage Examples</summary>
+### `.hasExact(...Bitflag[])`
 
-  ```ts
-  bitflag(flags.READ | flags.WRITE).has(flags.READ); // single defined
-  bitflag(flags.READ | flags.WRITE | flags.EXECUTE).has(
-    flags.READ,
-    flags.WRITE
-  ); // multiple defined
-  bitflag(flags.READ | flags.WRITE).has(flags.READ, makeBitflag(1 << 1)); // mixed
-  ```
+Checks if the current set matches exactly the specified flags - no more, no less. Returns `true` if the flags match exactly, `false` otherwise.
 
-  </details>
+**Tip:** Calling `.hasExact()` with no arguments checks if the current value is exactly zero.
 
-- `.hasAny(...Bitflag[])`
-  Checks if any of the specified flags are set in the current set. Returns `true` if at least one flag is present, `false` if none are present.
+#### Examples
 
-> [!TIP]
-> Passing no arguments to `.hasAny()` always returns `false`.
+```ts
+bitflag(flags.READ | flags.WRITE).hasExact(flags.READ, flags.WRITE); // single defined exact match
+bitflag(flags.NONE).hasExact(); // multiple defined (empty means zero flags)
+bitflag(flags.READ).hasExact(makeBitflag(1 << 0)); // mixed
+```
 
-  <details>
-  <summary>Usage Examples</summary>
+### `.add(...Bitflag[])`
 
-  ```ts
-  bitflag(flags.READ | flags.WRITE).hasAny(flags.EXECUTE); // single defined
-  bitflag(flags.READ).hasAny(flags.EXECUTE, flags.DELETE); // multiple defined
-  bitflag(flags.READ).hasAny(flags.EXECUTE, makeBitflag(1 << 0)); // mixed
-  ```
+Adds the specified flags to the current set. Returns a new number wrapped in `Bitflag<T>` as the updated flags.
 
-  </details>
+**Tip:** Adding the same flag multiple times is idempotent - it won't change the result.
 
-- `.hasExact(...Bitflag[])`
-  Checks if the current set matches exactly the specified flags - no more, no less. Returns `true` if the flags match exactly, `false` otherwise.
+#### Examples
 
-> [!TIP]
-> Calling `.hasExact()` with no arguments checks if the current value is exactly zero.
+```ts
+bitflag(flags.MY_FLAG).add(flags.MY_OTHER_FLAG); // single defined
+bitflag(flags.MY_FLAG).add(flags.MY_OTHER_FLAG, flags.ANOTHER_FLAG); // multiple defined
+bitflag(flags.MY_FLAG).add(flags.MY_OTHER_FLAG, makeBitflag(1 << 2)); // mixed
+```
 
-  <details>
-  <summary>Usage Examples</summary>
+### `.remove(...Bitflag[])`
 
-  ```ts
-  bitflag(flags.READ | flags.WRITE).hasExact(flags.READ, flags.WRITE); // single defined exact match
-  bitflag(flags.NONE).hasExact(); // multiple defined (empty means zero flags)
-  bitflag(flags.READ).hasExact(makeBitflag(1 << 0)); // mixed
-  ```
+Removes the specified flags from the current set. Returns a new number wrapped in `Bitflag<T>` as the updated flags.
 
-  </details>
+**Tip:** Removing non-existent flags has no effect and won't change the result.
 
-- `.clear()`
-  Clears all flags, setting the value to zero. Returns a new number wrapped in `Bitflag<T>` with value 0.
+#### Examples
 
-  <details>
-  <summary>Usage Examples</summary>
+```ts
+bitflag(flags.READ | flags.WRITE).remove(flags.WRITE); // single defined
+bitflag(flags.ALL).remove(flags.WRITE, flags.DELETE); // multiple defined
+bitflag(flags.READ | flags.WRITE).remove(flags.WRITE, makeBitflag(1 << 3)); // mixed
+```
 
-  ```ts
-  bitflag(flags.ALL).clear(); // returns 0 as Bitflag
-  ```
+### `.toggle(...Bitflag[])`
 
-  </details>
+Toggles the specified flags in the current set - adds them if not present, removes them if present. Returns a new number wrapped in `Bitflag<T>` as the updated flags.
 
-- `.describe(flagDefinitions?: BitflagsDefinitions<T>)`
-  Returns an iterator that yields `FlagDescription` objects for each set bit, providing detailed information about the flags including name, value, and bit position visualization.
+#### Examples
 
-  **FlagDescription Structure:**
+```ts
+bitflag(flags.READ).toggle(flags.WRITE); // single defined
+bitflag(flags.READ | flags.EXECUTE).toggle(flags.WRITE, flags.EXECUTE); // multiple defined
+bitflag(flags.read).toggle(flags.WRITE, makeBitflag(1 << 4)); // mixed
+```
 
-  ```ts
-  type FlagDescription = {
-    name: string; // Flag name or "BIT_X"/"UNKNOWN_BIT_X"
-    value: number; // Numeric value of this specific flag
-    decimal: string; // Decimal representation (e.g., "42")
-    hexadecimal: string; // Hexadecimal with 0x prefix (e.g., "0x2A")
-    binary: string; // Binary with 0b prefix (e.g., "0b101010")
-    unknown: boolean; // true if flag not found in the definitions provided via parameter
-    bitPosition: {
-      exact: number; // Highest bit position (-1 for zero)
-      remaining: number; // Remaining available bit positions
-      visual: string; // Visual bit representation with [1] markers
-    };
+### `.clear()`
+
+Clears all flags, setting the value to zero. Returns a new number wrapped in `Bitflag<T>` with value 0.
+
+#### Examples
+
+```ts
+bitflag(flags.ALL).clear(); // returns 0 as Bitflag
+```
+
+### Debugging and Visualization
+
+### `.describe(flagDefinitions?: BitflagsDefinitions<T>)`
+
+Returns an iterator that yields `FlagDescription` objects for each set bit, providing detailed information about the flags including name, value, and bit position visualization.
+
+#### FlagDescription Structure
+
+```ts
+type FlagDescription = {
+  name: string; // Flag name or "BIT_X"/"UNKNOWN_BIT_X"
+  value: number; // Numeric value of this specific flag
+  decimal: string; // Decimal representation (e.g., "42")
+  hexadecimal: string; // Hexadecimal with 0x prefix (e.g., "0x2A")
+  binary: string; // Binary with 0b prefix (e.g., "0b101010")
+  unknown: boolean; // true if flag not found in the definitions provided via parameter
+  bitPosition: {
+    exact: number; // Highest bit position (-1 for zero)
+    remaining: number; // Remaining available bit positions
+    visual: string; // Visual bit representation with [1] markers
   };
-  ```
+};
+```
 
-  Examples:
+#### Examples
 
-  <details>
-  <summary>Basic Usage with Flag Definitions</summary>
+**Basic Usage with Flag Definitions**
 
-  ```ts
-  [...bitflag(flags.READ | flags.WRITE).describe(flags)];
-  ```
+```ts
+[...bitflag(flags.READ | flags.WRITE).describe(flags)];
+```
 
-  ```js
-  // Returns:
-  [
-    {
-      name: "READ",
-      value: 1,
-      decimal: "1",
-      hexadecimal: "0x1",
-      binary: "0b1",
-      unknown: false,
-      bitPosition: {
-        exact: 0,
-        remaining: 31,
-        visual: "(0)000000000000000000000000000000[1]",
-      },
+Returns:
+```js
+[
+  {
+    name: "READ",
+    value: 1,
+    decimal: "1",
+    hexadecimal: "0x1",
+    binary: "0b1",
+    unknown: false,
+    bitPosition: {
+      exact: 0,
+      remaining: 31,
+      visual: "(0)000000000000000000000000000000[1]",
     },
-    {
-      name: "WRITE",
-      value: 2,
-      decimal: "2",
-      hexadecimal: "0x2",
-      binary: "0b10",
-      unknown: false,
-      bitPosition: {
-        exact: 1,
-        remaining: 30,
-        visual: "(0)00000000000000000000000000000[1]0",
-      },
+  },
+  {
+    name: "WRITE",
+    value: 2,
+    decimal: "2",
+    hexadecimal: "0x2",
+    binary: "0b10",
+    unknown: false,
+    bitPosition: {
+      exact: 1,
+      remaining: 30,
+      visual: "(0)00000000000000000000000000000[1]0",
     },
-  ];
-  ```
+  },
+]
+```
 
-  </details>
+**Generic Bit Names (No Definitions)**
 
-  <details>
-  <summary>Generic Bit Names (No Definitions)</summary>
+```ts
+// Without definitions - shows generic BIT_X names
+[...bitflag(5).describe()]; // value 5 = bits 0 and 2
+```
 
-  ```ts
-  // Without definitions - shows generic BIT_X names
-  [...bitflag(5).describe()]; // value 5 = bits 0 and 2
-  ```
-
-  ```js
-  // Returns:
-  [
-    {
-      name: "BIT_0",
-      value: 1,
-      binary: "0b1",
-      unknown: false,
-      bitPosition: {
-        exact: 0,
-        remaining: 31,
-        visual: "(0)000000000000000000000000000000[1]",
-      },
+Returns:
+```js
+[
+  {
+    name: "BIT_0",
+    value: 1,
+    binary: "0b1",
+    unknown: false,
+    bitPosition: {
+      exact: 0,
+      remaining: 31,
+      visual: "(0)000000000000000000000000000000[1]",
     },
-    {
-      name: "BIT_2",
-      value: 4,
-      binary: "0b100",
-      unknown: false,
-      bitPosition: {
-        exact: 2,
-        remaining: 29,
-        visual: "(0)0000000000000000000000000000[1]00",
-      },
+  },
+  {
+    name: "BIT_2",
+    value: 4,
+    binary: "0b100",
+    unknown: false,
+    bitPosition: {
+      exact: 2,
+      remaining: 29,
+      visual: "(0)0000000000000000000000000000[1]00",
     },
-  ];
-  ```
+  },
+]
+```
 
-  </details>
+**Mixed Known and Unknown Flags**
 
-  <details>
-  <summary>Mixed Known and Unknown Flags</summary>
+```ts
+// Mixed known and unknown flags
+[...bitflag(flags.READ | makeBitflag(1 << 10)).describe(flags)];
+```
 
-  ```ts
-  // Mixed known and unknown flags
-  [...bitflag(flags.READ | makeBitflag(1 << 10)).describe(flags)];
-  ```
-
-  ```js
-  // Returns:
-  [
-    {
-      name: "READ",
-      value: 1,
-      decimal: "1",
-      hexadecimal: "0x1",
-      binary: "0b1",
-      unknown: false,
-      bitPosition: {
-        exact: 0,
-        remaining: 31,
-        visual: "(0)000000000000000000000000000000[1]",
-      },
+Returns:
+```js
+[
+  {
+    name: "READ",
+    value: 1,
+    decimal: "1",
+    hexadecimal: "0x1",
+    binary: "0b1",
+    unknown: false,
+    bitPosition: {
+      exact: 0,
+      remaining: 31,
+      visual: "(0)000000000000000000000000000000[1]",
     },
-    {
-      name: "UNKNOWN_BIT_10",
-      value: 1024,
-      decimal: "1024",
-      hexadecimal: "0x400",
-      binary: "0b10000000000",
-      unknown: true,
-      bitPosition: {
-        exact: 10,
-        remaining: 21,
-        visual: "(0)00000000000000000000[1]0000000000",
-      },
+  },
+  {
+    name: "UNKNOWN_BIT_10",
+    value: 1024,
+    decimal: "1024",
+    hexadecimal: "0x400",
+    binary: "0b10000000000",
+    unknown: true,
+    bitPosition: {
+      exact: 10,
+      remaining: 21,
+      visual: "(0)00000000000000000000[1]0000000000",
     },
-  ];
-  ```
+  },
+]
+```
 
-  </details>
+**Zero Value Special Case**
 
-  <details>
-  <summary>Zero Value Special Case</summary>
+```ts
+// Zero value special case
+[...bitflag(0).describe()];
+```
 
-  ```ts
-  // Zero value special case
-  [...bitflag(0).describe()];
-  ```
-
-  ```js
-  // Returns:
-  [
-    {
-      name: "NONE",
-      value: 0,
-      decimal: "0",
-      hexadecimal: "0x0",
-      binary: "0b0",
-      unknown: false,
-      bitPosition: {
-        exact: -1,
-        remaining: 31,
-        visual: "(0)0000000000000000000000000000000",
-      },
+Returns:
+```js
+[
+  {
+    name: "NONE",
+    value: 0,
+    decimal: "0",
+    hexadecimal: "0x0",
+    binary: "0b0",
+    unknown: false,
+    bitPosition: {
+      exact: -1,
+      remaining: 31,
+      visual: "(0)0000000000000000000000000000000",
     },
-  ];
-  ```
+  },
+]
+```
 
-  </details>
+**High Bit Positions (15 & 30)**
 
-  <details>
-  <summary>High Bit Positions (15 & 30)</summary>
+```ts
+// High bit positions (bit 15 and 30)
+[...bitflag(makeBitflag((1 << 15) | (1 << 30))).describe()];
+```
 
-  ```ts
-  // High bit positions (bit 15 and 30)
-  [...bitflag(makeBitflag((1 << 15) | (1 << 30))).describe()];
-  ```
-
-  ```js
-  // Returns:
-  [
-    {
-      name: "BIT_15",
-      value: 32768,
-      binary: "0b1000000000000000",
-      bitPosition: {
-        exact: 15,
-        remaining: 16,
-        visual: "(0)000000000000000[1]000000000000000",
-      },
+Returns:
+```js
+[
+  {
+    name: "BIT_15",
+    value: 32768,
+    binary: "0b1000000000000000",
+    bitPosition: {
+      exact: 15,
+      remaining: 16,
+      visual: "(0)000000000000000[1]000000000000000",
     },
-    {
-      name: "BIT_30",
-      value: 1073741824,
-      binary: "0b1000000000000000000000000000000",
-      bitPosition: {
-        exact: 30,
-        remaining: 1,
-        visual: "(0)[1]000000000000000000000000000000",
-      },
+  },
+  {
+    name: "BIT_30",
+    value: 1073741824,
+    binary: "0b1000000000000000000000000000000",
+    bitPosition: {
+      exact: 30,
+      remaining: 1,
+      visual: "(0)[1]000000000000000000000000000000",
     },
-  ];
-  ```
+  },
+]
+```
 
-  </details>
+#### Important Notes
 
-> [!TIP] 
-> **Bit Position Visualization:** The `visual` field shows a 32-character representation where `[1]` indicates set bits and `0` shows unset bits. The format is `(0)[bit31][bit30]...[bit1][bit0]` with the sign bit always shown as `(0)`.
+**Bit Position Visualization:** The `visual` field shows a 32-character representation where `[1]` indicates set bits and `0` shows unset bits. The format is `(0)[bit31][bit30]...[bit1][bit0]` with the sign bit always shown as `(0)`.
 
-> [!TIP] 
-> **Flag Resolution Order:** When using flag definitions, the iterator yields known flags first (in the order they match), then unknown bits as `UNKNOWN_BIT_X` in ascending bit order.
+**Flag Resolution Order:** When using flag definitions, the iterator yields known flags first (in the order they match), then unknown bits as `UNKNOWN_BIT_X` in ascending bit order.
 
-> [!TIP] 
-> **Complex Flags:** Combined flags (like `READ_WRITE: (1<<0)|(1<<1)`) are detected when their exact bit pattern matches the current value, alongside their individual component flags.
+**Complex Flags:** Combined flags (like `READ_WRITE: (1<<0)|(1<<1)`) are detected when their exact bit pattern matches the current value, alongside their individual component flags.
 
-- `.value`
-  A getter that returns the current numeric value of the flags as a regular number.
+### Interoperability between the library and other code
 
-  <details>
-  <summary>Usage Examples</summary>
+### `.value`
 
-  ```ts
-  bitflag(flags.READ | flags.WRITE).value; // returns 3
-  bitflag().value; // returns 0
-  bitflag(flags.ALL).value; // returns the combined numeric value
-  ```
+A getter that returns the current numeric value of the flags as a regular number.
 
-  </details>
+#### Examples
 
-- `.valueOf()`
-  Returns the current numeric value of the flags, enabling implicit conversion to number in JavaScript operations.
+```ts
+bitflag(flags.READ | flags.WRITE).value; // returns 3
+bitflag().value; // returns 0
+bitflag(flags.ALL).value; // returns the combined numeric value
+```
 
-  <details>
-  <summary>Usage Examples</summary>
+### `.valueOf()`
 
-  ```ts
-  bitflag(flags.READ).valueOf(); // explicit call
-  +bitflag(flags.WRITE); // implicit conversion
-  Number(bitflag(flags.EXECUTE)); // explicit conversion
-  ```
+Returns the current numeric value of the flags, enabling implicit conversion to number in JavaScript operations.
 
-  </details>
+#### Examples
 
-- `.toString()`
-  Returns the string representation of the current numeric value of the flags.
+```ts
+bitflag(flags.READ).valueOf(); // explicit call
++bitflag(flags.WRITE); // implicit conversion
+Number(bitflag(flags.EXECUTE)); // explicit conversion
+```
 
-  <details>
-  <summary>Usage Examples</summary>
+### `.toString()`
 
-  ```ts
-  bitflag(flags.READ).toString(); // returns "1"
-  String(bitflag(flags.READ | flags.WRITE)); // returns "3"
-  `Current flags: ${bitflag(flags.ALL)}`; // template literal usage
-  ```
+Returns the string representation of the current numeric value of the flags.
 
-  </details>
+#### Examples
 
-- `defineBitflags<T extends Record<string, number>>(obj: T)`
+```ts
+bitflag(flags.READ).toString(); // returns "1"
+String(bitflag(flags.READ | flags.WRITE)); // returns "3"
+`Current flags: ${bitflag(flags.ALL)}`; // template literal usage
+```
 
-  Utility function to define a type-safe set of bit flags. It validates that all values are non-negative integers within the 31-bit range and returns a frozen object with `Bitflag` Tagged Types.
+### Utility Functions
 
-  <details>
-  <summary>Usage Examples</summary>
+### `defineBitflags<T extends Record<string, number>>(obj: T)`
 
-  ```ts
-  const flags = defineBitflags({
-    READ: 1 << 0,
-    WRITE: 1 << 1,
-    EXECUTE: 1 << 2,
-  }); // basic usage
+Utility function to define a type-safe set of bit flags. It validates that all values are non-negative integers within the 31-bit range and returns a frozen object with `Bitflag` Tagged Types.
 
-  const complexFlags = defineBitflags({
-    NONE: 0,
-    READ: 1 << 0,
-    WRITE: 1 << 1,
-    READ_WRITE: (1 << 0) | (1 << 1),
-  }); // with combined flags
+**Tip:** The returned object is frozen to prevent accidental modifications. All values must be within the range 0 to 0x7FFFFFFF (31-bit signed integer range).
 
-  const permissions = defineBitflags({
-    VIEWER: 1,
-    EDITOR: 3,
-    ADMIN: 15,
-  }); // with arbitrary values
-  ```
+#### Examples
 
-  </details>
+```ts
+const flags = defineBitflags({
+  READ: 1 << 0,
+  WRITE: 1 << 1,
+  EXECUTE: 1 << 2,
+}); // basic usage
 
-> [!TIP]
-> The returned object is frozen to prevent accidental modifications. All values must be within the range 0 to 0x7FFFFFFF (31-bit signed integer range).
+const complexFlags = defineBitflags({
+  NONE: 0,
+  READ: 1 << 0,
+  WRITE: 1 << 1,
+  READ_WRITE: (1 << 0) | (1 << 1),
+}); // with combined flags
 
-- `makeBitflag(value: number)`
+const permissions = defineBitflags({
+  VIEWER: 1,
+  EDITOR: 3,
+  ADMIN: 15,
+}); // with arbitrary values
+```
 
-  Utility function to create a `Bitflag` Tagged Type from a number if it's within the valid range. Throws an error if the conversion would result in a data loss.
+### `makeBitflag(value: number)`
 
-  <details>
-  <summary>Usage Examples</summary>
+Utility function to create a `Bitflag` Tagged Type from a number if it's within the valid range. Throws an error if the conversion would result in a data loss.
 
-  ```ts
-  makeBitflag(5); // creates Bitflag from valid number
-  makeBitflag(0); // creates Bitflag for zero
-  makeBitflag(0x7fffffff); // creates Bitflag for maximum value
-  ```
+**Tip:** This function validates the input and throws a descriptive error for invalid values (negative numbers or values exceeding 31 bits). It is also the only function that throws.
 
-  </details>
+#### Examples
 
-> [!TIP]
-> This function validates the input and throws a descriptive error for invalid values (negative numbers or values exceeding 31 bits). It is also the only function that `throws`
+```ts
+makeBitflag(5); // creates Bitflag from valid number
+makeBitflag(0); // creates Bitflag for zero
+makeBitflag(0x7fffffff); // creates Bitflag for maximum value
+```
 
-- `isBitflag(value: unknown)`
+### `isBitflag(value: unknown)`
 
-  Type guard utility to check if a value can be used as a `Bitflag`. Returns `true` if the value is a non-negative integer within the 31-bit range.
+Type guard utility to check if a value can be used as a `Bitflag`. Returns `true` if the value is a non-negative integer within the 31-bit range.
 
-  <details>
-  <summary>Usage Examples</summary>
+**Tip:** This function is useful for runtime validation before using values with the bitflag operations.
 
-  ```ts
-  isBitflag(5); // returns true
-  isBitflag(-1); // returns false
-  isBitflag(1.5); // returns false
-  ```
+#### Examples
 
-  </details>
+```ts
+isBitflag(5); // returns true
+isBitflag(-1); // returns false
+isBitflag(1.5); // returns false
+```
 
-> [!TIP]
-> This function is useful for runtime validation before using values with the bitflag operations.
+### `unwrapBitflag(flag: Bitflag)`
 
-- `unwrapBitflag(flag: Bitflag)`
+Utility function to extract the numeric value from a `Bitflag` Tagged Type, converting it back to a regular number.
 
-  Utility function to extract the numeric value from a `Bitflag` Tagged Type, converting it back to a regular number.
+#### Examples
 
-  <details>
-  <summary>Usage Examples</summary>
+```ts
+const flags = defineBitflags({ TEST: 5 });
+unwrapBitflag(flags.TEST); // returns 5 as number
+unwrapBitflag(bitflag(flags.TEST).add(makeBitflag(2))); // returns 7 as number
+unwrapBitflag(bitflag().clear()); // returns 0 as number
+```
 
-  ```ts
-  const flags = defineBitflags({ TEST: 5 });
-  unwrapBitflag(flags.TEST); // returns 5 as number
-  unwrapBitflag(bitflag(flags.TEST).add(makeBitflag(2))); // returns 7 as number
-  unwrapBitflag(bitflag().clear());// returns 0 as number
-  ```
+### Type Utilities
 
-  </details>
+### `Bitflag`
 
-## Type Utilities
+The tagged type for individual bitflag numbers. This ensures type safety by distinguishing bitflag numbers from regular numbers.
 
-- `Bitflag`
+It is mostly used internally inside the library source. Export exists for complex cases where you would need this type.
 
-  The tagged type for individual bitflag numbers. This ensures type safety by distinguishing bitflag numbers from regular numbers.
+### `BitflagsDefinitions<T>`
 
-  It is mostly used internally inside the library source. Export exists for complex cases where you would need this type.
+The type for frozen bitflag definition objects returned by `defineBitflags`. This represents the complete set of flag definitions.
 
-- `BitflagsDefinitions<T>`
+It is mostly used internally inside the library source. Export exists for complex cases where you would need this type.
 
-  The type for frozen bitflag definition objects returned by `defineBitflags`. This represents the complete set of flag definitions.
+### `InferBitflagsDefinitions<T>`
 
-  It is mostly used internally inside the library source. Export exists for complex cases where you would need this type.
+Type utility to extract the shape from bitflag definitions. Converts `BitflagsDefinitions<T>` to `Record<keyof T, Bitflag>`.
 
+#### Examples
 
-- `InferBitflagsDefinitions<T>`
+```ts
+import { type InferBitflagsDefinitions } from "bitf";
 
-  Type utility to extract the shape from bitflag definitions. Converts `BitflagsDefinitions<T>` to `Record<keyof T, Bitflag>`.
+// Define flags
+const UserPermissions = defineBitflags({
+  READ: 1 << 0,
+  WRITE: 1 << 1,
+  DELETE: 1 << 2,
+});
 
-  <details>
-  <summary>Usage Examples</summary>
-
-  ```ts
-  import { type InferBitflagsDefinitions } from "bitf";
-
-  // Define flags
-  const UserPermissions = defineBitflags({
-    READ: 1 << 0,
-    WRITE: 1 << 1,
-    DELETE: 1 << 2,
-  });
-
-  // Extract type shape
-  type UserPermissionsType = InferBitflagsDefinitions<typeof UserPermissions>;
-  // Result: { READ: Bitflag; WRITE: Bitflag; DELETE: Bitflag }
-  ```
-
-  </details>
+// Extract type shape
+type UserPermissionsType = InferBitflagsDefinitions<typeof UserPermissions>;
+// Result: { READ: Bitflag; WRITE: Bitflag; DELETE: Bitflag }
+```
 
 ## Benchmarks
 
