@@ -199,8 +199,8 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
 > [!TIP]
 > Adding the same flag multiple times is idempotent - it won't change the result.
 
-    <details>
-    <summary>Usage Examples</summary>
+  <details>
+  <summary>Usage Examples</summary>
 
   ```ts
   bitflag(flags.MY_FLAG).add(flags.MY_OTHER_FLAG); // single defined
@@ -208,7 +208,7 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
   bitflag(flags.MY_FLAG).add(flags.MY_OTHER_FLAG, makeBitflag(1 << 2)); // mixed
   ```
 
-    </details>
+  </details>
 
 - `.remove(...Bitflag[])`
   Removes the specified flags from the current set. Returns a new number wrapped in `Bitflag<T>` as the updated flags.
@@ -216,8 +216,8 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
 > [!TIP]
 > Removing non-existent flags has no effect and won't change the result.
 
-    <details>
-    <summary>Usage Examples</summary>
+  <details>
+  <summary>Usage Examples</summary>
 
   ```ts
   bitflag(flags.READ | flags.WRITE).remove(flags.WRITE); // single defined
@@ -225,13 +225,13 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
   bitflag(flags.READ | flags.WRITE).remove(flags.WRITE, makeBitflag(1 << 3)); // mixed
   ```
 
-    </details>
+  </details>
 
 - `.toggle(...Bitflag[])`
   Toggles the specified flags in the current set - adds them if not present, removes them if present. Returns a new number wrapped in `Bitflag<T>` as the updated flags.
 
-    <details>
-    <summary>Usage Examples</summary>
+  <details>
+  <summary>Usage Examples</summary>
 
   ```ts
   bitflag(flags.READ).toggle(flags.WRITE); // single defined
@@ -239,7 +239,7 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
   bitflag(flags.READ).toggle(flags.WRITE, makeBitflag(1 << 4)); // mixed
   ```
 
-    </details>
+  </details>
 
 - `.has(...Bitflag[])`
   Checks if all the specified flags are set in the current set. Returns `true` if all flags are present, `false` otherwise.
@@ -247,8 +247,8 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
 > [!TIP]
 > Passing no arguments to `.has()` always returns `false`.
 
-    <details>
-    <summary>Usage Examples</summary>
+  <details>
+  <summary>Usage Examples</summary>
 
   ```ts
   bitflag(flags.READ | flags.WRITE).has(flags.READ); // single defined
@@ -259,7 +259,7 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
   bitflag(flags.READ | flags.WRITE).has(flags.READ, makeBitflag(1 << 1)); // mixed
   ```
 
-    </details>
+  </details>
 
 - `.hasAny(...Bitflag[])`
   Checks if any of the specified flags are set in the current set. Returns `true` if at least one flag is present, `false` if none are present.
@@ -267,8 +267,8 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
 > [!TIP]
 > Passing no arguments to `.hasAny()` always returns `false`.
 
-    <details>
-    <summary>Usage Examples</summary>
+  <details>
+  <summary>Usage Examples</summary>
 
   ```ts
   bitflag(flags.READ | flags.WRITE).hasAny(flags.EXECUTE); // single defined
@@ -276,7 +276,7 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
   bitflag(flags.READ).hasAny(flags.EXECUTE, makeBitflag(1 << 0)); // mixed
   ```
 
-    </details>
+  </details>
 
 - `.hasExact(...Bitflag[])`
   Checks if the current set matches exactly the specified flags - no more, no less. Returns `true` if the flags match exactly, `false` otherwise.
@@ -284,8 +284,8 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
 > [!TIP]
 > Calling `.hasExact()` with no arguments checks if the current value is exactly zero.
 
-    <details>
-    <summary>Usage Examples</summary>
+  <details>
+  <summary>Usage Examples</summary>
 
   ```ts
   bitflag(flags.READ | flags.WRITE).hasExact(flags.READ, flags.WRITE); // single defined exact match
@@ -293,19 +293,19 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
   bitflag(flags.READ).hasExact(makeBitflag(1 << 0)); // mixed
   ```
 
-    </details>
+  </details>
 
 - `.clear()`
   Clears all flags, setting the value to zero. Returns a new number wrapped in `Bitflag<T>` with value 0.
 
-    <details>
-    <summary>Usage Examples</summary>
+  <details>
+  <summary>Usage Examples</summary>
 
   ```ts
   bitflag(flags.ALL).clear(); // returns 0 as Bitflag
   ```
 
-    </details>
+  </details>
 
 - `.describe(flagDefinitions?: BitflagsDefinitions<T>)`
   Returns an iterator that yields `FlagDescription` objects for each set bit, providing detailed information about the flags including name, value, and bit position visualization.
@@ -330,8 +330,8 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
 
   Examples:
 
-    <details>
-    <summary>Basic Usage with Flag Definitions</summary>
+  <details>
+  <summary>Basic Usage with Flag Definitions</summary>
 
   ```ts
   [...bitflag(flags.READ | flags.WRITE).describe(flags)];
@@ -369,10 +369,10 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
   ];
   ```
 
-    </details>
+  </details>
 
-    <details>
-    <summary>Generic Bit Names (No Definitions)</summary>
+  <details>
+  <summary>Generic Bit Names (No Definitions)</summary>
 
   ```ts
   // Without definitions - shows generic BIT_X names
@@ -407,10 +407,10 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
   ];
   ```
 
-    </details>
+  </details>
 
-    <details>
-    <summary>Mixed Known and Unknown Flags</summary>
+  <details>
+  <summary>Mixed Known and Unknown Flags</summary>
 
   ```ts
   // Mixed known and unknown flags
@@ -449,10 +449,10 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
   ];
   ```
 
-    </details>
+  </details>
 
-    <details>
-    <summary>Zero Value Special Case</summary>
+  <details>
+  <summary>Zero Value Special Case</summary>
 
   ```ts
   // Zero value special case
@@ -478,10 +478,10 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
   ];
   ```
 
-    </details>
+  </details>
 
-    <details>
-    <summary>High Bit Positions (15 & 30)</summary>
+  <details>
+  <summary>High Bit Positions (15 & 30)</summary>
 
   ```ts
   // High bit positions (bit 15 and 30)
@@ -514,7 +514,7 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
   ];
   ```
 
-    </details>
+  </details>
 
 > [!TIP] 
 > **Bit Position Visualization:** The `visual` field shows a 32-character representation where `[1]` indicates set bits and `0` shows unset bits. The format is `(0)[bit31][bit30]...[bit1][bit0]` with the sign bit always shown as `(0)`.
@@ -528,8 +528,8 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
 - `.value`
   A getter that returns the current numeric value of the flags as a regular number.
 
-    <details>
-    <summary>Usage Examples</summary>
+  <details>
+  <summary>Usage Examples</summary>
 
   ```ts
   bitflag(flags.READ | flags.WRITE).value; // returns 3
@@ -537,13 +537,13 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
   bitflag(flags.ALL).value; // returns the combined numeric value
   ```
 
-    </details>
+  </details>
 
 - `.valueOf()`
   Returns the current numeric value of the flags, enabling implicit conversion to number in JavaScript operations.
 
-    <details>
-    <summary>Usage Examples</summary>
+  <details>
+  <summary>Usage Examples</summary>
 
   ```ts
   bitflag(flags.READ).valueOf(); // explicit call
@@ -551,13 +551,13 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
   Number(bitflag(flags.EXECUTE)); // explicit conversion
   ```
 
-    </details>
+  </details>
 
 - `.toString()`
   Returns the string representation of the current numeric value of the flags.
 
-    <details>
-    <summary>Usage Examples</summary>
+  <details>
+  <summary>Usage Examples</summary>
 
   ```ts
   bitflag(flags.READ).toString(); // returns "1"
@@ -565,7 +565,7 @@ function validateMeatAddition(currentPizza: Bitflag, toppingsToAdd: Bitflag) {
   `Current flags: ${bitflag(flags.ALL)}`; // template literal usage
   ```
 
-    </details>
+  </details>
 
 - `defineBitflags<T extends Record<string, number>>(obj: T)`
 
