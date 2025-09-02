@@ -1,3 +1,11 @@
+## [1.0.1](https://github.com/neg4n/bitf/compare/v1.0.0...v1.0.1) (2025-09-02)
+
+
+### Bug Fixes
+
+* indentation of collapsible sections in readme ([fe29d98](https://github.com/neg4n/bitf/commit/fe29d988c69b62851ed490981777f3e9691a71df))
+* restructure readme to be more readable ([52242d6](https://github.com/neg4n/bitf/commit/52242d68f0695c8cd3e0c43e9696e84f2c66f8c8))
+
 # 1.0.0 (2025-09-01)
 
 
