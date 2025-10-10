@@ -37,7 +37,6 @@
     "bench:gc": "node --expose-gc node_modules/.bin/tsx benchmark/index.ts",
     "bench:watch": "tsx watch benchmark/index.ts",
     "prepare": "husky",
-    "postinstall": "husky",
     "prepublishOnly": "pnpm build",
     "release": "semantic-release"
   },
